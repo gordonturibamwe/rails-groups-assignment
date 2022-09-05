@@ -1,0 +1,30 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 15 } %>
+
+development:
+  <<: *default
+  database: assignment_db
+  username: main_user_for_all
+  password: AVNS_Rp-J5CcD3LCdaVlZXkk
+  host: testing-db-do-user-6542885-0.b.db.ondigitalocean.com
+  port: 25060
+  sslmode: require
+
+test:
+  <<: *default
+  username: user_tester
+  password: AVNS_b0ynAfEOuJSh7KPFQuV
+  host: testing-db-do-user-6542885-0.b.db.ondigitalocean.com
+  port: 25060
+  database: user_tester_db
+  sslmode: require
+
+production:
+  <<: *default
+  database: rails_auth_production
+  username: rails_auth
+  password: <%= ENV["RAILS_AUTH_DATABASE_PASSWORD"] %>
