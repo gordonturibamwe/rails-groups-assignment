@@ -1,11 +1,31 @@
 class Api::V1::GroupsController < ApplicationController
   include Api::V1::GroupsHelper
-  before_action :set_group, except: [:create]
+  before_action :set_group, except: [:create, :all_groups]
+
+  def all_groups
+    respond_to do |format|
+      @groups = Group.where(user_id: @user.id).order(created_at: :desc) if params[:q] == 'by-me'
+      @groups = Group.includes(:user_groups).where(user_groups: {user_id: @user.id}).order(created_at: :desc) if params[:q] == 'where-am-member'
+      @groups = Group.includes(:user_groups).order(created_at: :desc) if @groups.nil?
+      format.json {render status: :ok}
+    end
+  end
 
   def create
     @group = @user.groups.build(group_params)
     respond_to do |format|
       if @group.save
+        # @group = @group.attributes.merge({action: 'create'}) @group
+        ActionCable.server.broadcast "GroupsChannel", {
+          id: @group.id,
+          name: @group.name,
+          group_access: @group.group_access,
+          total_posts: @group.total_posts,
+          total_members: @group.total_members,
+          last_activity: @group.last_activity,
+          user_id: @group.user_id,
+          action: 'create'
+        }
         format.json {render status: :ok}
       else
         format.json {
@@ -14,13 +34,13 @@ class Api::V1::GroupsController < ApplicationController
         }
       end
     end
-  rescue => exception
-    respond_to do |format|
-      format.json {
-        render status: :unprocessable_entity,
-        json: error_response_messages({error: [exception.message]})
-      }
-    end
+  # rescue => exception
+  #   respond_to do |format|
+  #     format.json {
+  #       render status: :unprocessable_entity,
+  #       json: error_response_messages({error: [exception.message]})
+  #     }
+  #   end
   end
 
   private
@@ -37,7 +57,7 @@ end
 
 
 # def index
-#   @groups = Group.where(user_id: current_user.id).order(created_at: :desc) if params[:q] == 'by-me'
+#   @groups = Group.where(user_id: @user.id).order(created_at: :desc) if params[:q] == 'by-me'
 #   @groups = Group.includes(:user_groups).where(user_groups: {user_id: current_user.id}).order(created_at: :desc) if params[:q] == 'where-am-member'
 #   @groups = Group.includes(:user_groups).order(created_at: :desc) if @groups.nil?
 # end

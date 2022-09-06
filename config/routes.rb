@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount ActionCable.server => "/cable"
   root to: "welcome#welcome"
 
   namespace :api, defaults: {format: :json} do
@@ -27,6 +28,7 @@ Rails.application.routes.draw do
       post "send-sms", to: "send_messages#send_sms_now"
       post "send-email", to: "send_messages#send_email_now"
 
+      get 'all-groups', to: 'groups#all_groups'
       post 'create-group', to: 'groups#create'
       # resources :groups
       # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
