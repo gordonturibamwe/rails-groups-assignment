@@ -11,6 +11,25 @@ class Api::V1::GroupsController < ApplicationController
     end
   end
 
+  def show_group
+    user_exists_in_group = current_user_group_member?(@group)
+    if user_exists_in_group and user_exists_in_group.request_accepted
+      respond_to do |format|
+        format.json {render status: :ok}
+        @users = @group.user_groups.order(created_at: :desc)
+        # @posts = @group.posts.order(created_at: :desc)
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
+
   def create
     @group = @user.groups.build(group_params)
     respond_to do |format|
@@ -34,13 +53,13 @@ class Api::V1::GroupsController < ApplicationController
         }
       end
     end
-  # rescue => exception
-  #   respond_to do |format|
-  #     format.json {
-  #       render status: :unprocessable_entity,
-  #       json: error_response_messages({error: [exception.message]})
-  #     }
-  #   end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
   end
 
   private

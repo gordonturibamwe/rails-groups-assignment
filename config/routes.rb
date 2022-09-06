@@ -29,6 +29,7 @@ Rails.application.routes.draw do
       post "send-email", to: "send_messages#send_email_now"
 
       get 'all-groups', to: 'groups#all_groups'
+      get 'group/:id', to: 'groups#show_group'
       post 'create-group', to: 'groups#create'
       # resources :groups
       # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
