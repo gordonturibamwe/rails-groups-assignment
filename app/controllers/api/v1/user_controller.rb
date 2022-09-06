@@ -48,29 +48,34 @@ class Api::V1::UserController < ApplicationController
     # @param [http params ~> {:phone_number or :email or :username, :password}]
     # @return [json data]
     respond_to do |format|
-      # begin
-        user = User.find_by_email(params[:email]) if params[:email].present?
-        user ||= User.find_by_username(params[:username]) if params[:username].present?
+      begin
+        user = User.find_by_email(params[:login])
+        user ||= User.find_by_username(params[:login]) if user.nil?
         raise 'User with provided logins does not exist.' if user.nil?
         raise "User is locked." if user.is_user_locked
         is_user_authenticated = user.authenticate(user_params[:password])
-        token = encode_token({user_id: user.id}) # Encode user_id
-        user.update(
-          last_login_ip: request.ip,
-          valid_token: token.split('.')[2],
-          password_failed_attempts: 0
-        )
-        @user = user
-        # response.headers["X-Auth-Token"] = token # Add token to response
-        response.headers["Authorization"] = "Bearer #{token}"
-        format.json {render status: :ok}
-      # rescue => exception
-      #   puts "=+++ #{exception.inspect}"
-      #   format.json {
-      #     render status: :unprocessable_entity,
-      #     json: error_response_messages({error: [exception.message]})
-      #   }
-      # end
+        if is_user_authenticated
+          token = encode_token({user_id: user.id}) # Encode user_id
+          user.update(
+            last_login_ip: request.ip,
+            valid_token: token.split('.')[2],
+            password_failed_attempts: 0
+          )
+          @user = user
+          response.headers["Authorization"] = "Bearer #{token}"
+          format.json {render status: :ok}
+        else
+          format.json {
+            render status: :unprocessable_entity,
+            json: error_response_messages({error: ['Login details invalid.']})
+          }
+        end
+      rescue => exception
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages({error: [exception.message]})
+        }
+      end
     end
   end
 
@@ -688,34 +693,6 @@ class Api::V1::UserController < ApplicationController
   end
 
   private
-  def update_user_on_failed_login_attempts(user)
-    # Updates when ever the login password has failed
-    # @param [Object User]
-    # @return [integer reached_max_attepts]
-    reached_max_attepts = ((user.max_password_failed_attempts - 1) == user.password_failed_attempts)
-    user.update(
-      password_failed_attempts: user.password_failed_attempts += 1,
-      is_user_locked: reached_max_attepts ? true : false,
-      user_locked_on: reached_max_attepts ? DateTime.now : nil,
-      reset_password_id: reached_max_attepts ? SecureRandom.uuid : nil,
-      reset_password_expiration: reached_max_attepts ? DateTime.now : nil,
-      remember_me: false,
-      remember_me_expiration: nil,
-      valid_token: ""
-    )
-    return reached_max_attepts
-  end
-
-  def permit_attrs_customer_can_only_change
-    # Returns attributes a user can change about their user.
-    user_params.except(:password,:valid_token,:reset_password_id,:verification_id,:password_failed_attempts,:is_user_verified,:user_locked_on,:verification_otp,:user_roles,:is_on_waitlist,:is_user_active,:is_superuser,:is_staff,:last_login_ip,:logged_in_ips,:login_count)
-  end
-
-  def permit_attrs_staff_can_only_change
-    # Returns attributes a staff can change about the a users user.
-    user_params.except(:password,:valid_token,:reset_password_id,:verification_id,:password_failed_attempts,:user_locked_on,:last_login_ip,:logged_in_ips,:verification_expiration,:verification_otp,:reset_password_id,:reset_password_expiration)
-  end
-
   def user_params
     params.permit(
       :username,
@@ -726,15 +703,6 @@ class Api::V1::UserController < ApplicationController
       :last_login_ip,
       :logged_in_ips,
       :is_user_active,
-      :valid_token,
-      :is_superuser,
-      :is_staff,
-      :is_customer,
-      :staff_roles,
-      :customer_roles,
-      :verification_id,
-      :verification_expiration,
-      :verification_sent_to,
       :is_user_verified,
       :verification_otp,
       :reset_password_id,

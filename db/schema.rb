@@ -10,10 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_21_214402) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_06_075152) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "description"
+    t.integer "total_members", default: 0
+    t.integer "total_posts", default: 0
+    t.integer "group_access", default: 0
+    t.datetime "last_activity", null: false
+    t.uuid "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_groups_on_user_id"
+  end
+
+  create_table "user_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "group_id", null: false
+    t.boolean "is_admin", default: false
+    t.boolean "is_member", default: true
+    t.boolean "request_accepted", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id"], name: "index_user_groups_on_group_id"
+    t.index ["user_id"], name: "index_user_groups_on_user_id"
+  end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.integer "year", default: 0, null: false
@@ -41,4 +66,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_21_214402) do
     t.index ["username"], name: "index_users_on_username"
   end
 
+  add_foreign_key "groups", "users"
+  add_foreign_key "user_groups", "groups"
+  add_foreign_key "user_groups", "users"
 end

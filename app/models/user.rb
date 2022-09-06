@@ -5,5 +5,7 @@ class User < ApplicationRecord
   validates :email, uniqueness: {message: "Email already registered."}, allow_blank: false, format: {with: /.+\@.+\..+/, on: :save}
 	validates :password, presence: true, length: {in: 4..10, message: "Password is too short. Minimum 4 characters."}
 
-  # scope :existing, -> { where(trashed: false) }
+  has_many :user_groups, dependent: :destroy, foreign_key: :user_id
+  has_many :groups, through: :user_groups
+  has_many :groups, dependent: :destroy
 end

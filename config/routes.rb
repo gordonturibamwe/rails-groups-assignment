@@ -26,6 +26,14 @@ Rails.application.routes.draw do
       # Communication
       post "send-sms", to: "send_messages#send_sms_now"
       post "send-email", to: "send_messages#send_email_now"
+
+      post 'create-group', to: 'groups#create'
+      # resources :groups
+      # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
+      # post :post_comment_reply, controller: 'comments', as: 'post_comment_reply'
+      # get 'group/:id', to: "groups#show_group", as: 'show_group'
+      # delete 'group/:id/user/:user_id', to: "groups#remove_user_from_group_request", as: 'remove_user_from_group_request'
+      # post 'group/:id/user/:user_id', to: "groups#approve_group_request", as: 'approve_group_request'
     end
   end
 

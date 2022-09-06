@@ -29,6 +29,12 @@ module ApplicationHelper
           true,
           algorithm: 'HS256'
         )
+        #today = DateTime.now.to_time.to_i
+        #return DateTime.new(2022, 10, 4, 0, 0, 0).to_time.to_i > result[0]['exp'] ? nil : result
+        # result[0]['exp']
+        # puts "---- #{result}" # [{"user_id"=>"8672cbdb-aca7-49bf-b92c-994871b4f3e9", "exp"=>1663050686}, {"alg"=>"HS256"}]
+        # puts "---- #{result.inspect}"
+        # return result
       rescue JWT::DecodeError
         nil
       end

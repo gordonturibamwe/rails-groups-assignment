@@ -32,7 +32,6 @@ class ApplicationController < ActionController::API
     # @return [User object]
     begin
       user_id = decoded_token[0]['user_id']
-      puts "------ #{user_id}"
       @user = User.find_by(id: user_id)
     rescue Exception => exception
       nil
