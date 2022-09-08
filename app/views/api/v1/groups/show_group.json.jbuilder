@@ -12,6 +12,4 @@ if @user_exists_in_group
     json.is_member @user_exists_in_group.is_member
     json.request_accepted @user_exists_in_group.request_accepted
   end
-else
-  json.user_exists_in_group false
 end

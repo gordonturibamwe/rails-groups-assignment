@@ -20,7 +20,7 @@ class Group < ApplicationRecord
       group_id: self.id,
       user_id: self.user_id,
       request_accepted: true
-    ) if self.is_public?
+    )
   end
 end
 
