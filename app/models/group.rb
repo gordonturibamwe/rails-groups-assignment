@@ -14,8 +14,9 @@ class Group < ApplicationRecord
   end
 
   after_create do
-    UserGroup.create(
+    user_group = UserGroup.create(
       is_member: true,
+      is_admin: true,
       group_id: self.id,
       user_id: self.user_id,
       request_accepted: true

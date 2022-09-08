@@ -8,12 +8,16 @@ class Api::V1::GroupsController < ApplicationController
       @groups = Group.includes(:user_groups).where(user_groups: {user_id: @user.id}).order(created_at: :desc) if params[:q] == 'where-am-member'
       @groups = Group.includes(:user_groups).order(created_at: :desc) if @groups.nil?
       format.json {render status: :ok}
+      # puts "++++----- #{@groups.first.user_groups.include?(@user.id)}"
+      # puts "++++----- #{@user.groups.user_groups}"
+      # puts "++++----- #{@groups.first.user_groups}"
+      # puts "++++----- #{@groups.first.user_groups}"
     end
   end
 
   def show_group
-    user_exists_in_group = current_user_group_member?(@group)
-    if user_exists_in_group and user_exists_in_group.request_accepted
+    @user_exists_in_group = current_user_group_member?(@group)
+    if @user_exists_in_group and @user_exists_in_group.request_accepted
       respond_to do |format|
         format.json {render status: :ok}
         @users = @group.user_groups.order(created_at: :desc)
@@ -29,22 +33,11 @@ class Api::V1::GroupsController < ApplicationController
     end
   end
 
-
   def create
     @group = @user.groups.build(group_params)
     respond_to do |format|
       if @group.save
-        # @group = @group.attributes.merge({action: 'create'}) @group
-        ActionCable.server.broadcast "GroupsChannel", {
-          id: @group.id,
-          name: @group.name,
-          group_access: @group.group_access,
-          total_posts: @group.total_posts,
-          total_members: @group.total_members,
-          last_activity: @group.last_activity,
-          user_id: @group.user_id,
-          action: 'create'
-        }
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'create')
         format.json {render status: :ok}
       else
         format.json {
@@ -62,7 +55,83 @@ class Api::V1::GroupsController < ApplicationController
     end
   end
 
+  def join_public_group
+    user_exists_in_group = current_user_group_member?(@group)
+    respond_to do |format|
+      @user_group = UserGroup.create(is_member: true, group_id: @group.id, user_id: @user.id, request_accepted: true)
+      if !user_exists_in_group && @group.is_public? && @user_group.save
+        @group.update(total_members: @group.total_members + 1)
+        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages({error: [user_exists_in_group ? 'You already joined group.' : @user_group.errors.messages]})
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
+  def request_to_join_private_group
+    user_exists_in_group = current_user_group_member?(@group)
+    respond_to do |format|
+      @user_group = UserGroup.create(is_member: false, group_id: @group.id, user_id: @user.id, request_accepted: false)
+      if !user_exists_in_group && @group.is_public? && @user_group.save
+        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages({error: [user_exists_in_group ? 'Request already sent.' : 'Request not sent. Try again.']})
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
+
   private
+  def group_object(group:, action:)
+    {
+      id: group.id,
+      name: group.name,
+      group_access: group.group_access,
+      total_posts: group.total_posts,
+      total_members: group.total_members,
+      last_activity: group.last_activity,
+      user_id: group.user_id,
+      user_exists_in_group: group.user_groups.find_by_user_id(@user.id),
+      action: action
+    }
+  end
+
+  def user_group_object(user_group:, action:)
+    {
+      id: user_group.id,
+      is_member: user_group.is_member,
+      is_admin: user_group.is_admin,
+      request_accepted: user_group.request_accepted,
+      group_id: user_group.group_id,
+      user_id: user_group.user_id,
+      action: action
+    }
+  end
+
   def set_group
     @group = Group.find(params[:id])
   end

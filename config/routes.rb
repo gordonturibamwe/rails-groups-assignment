@@ -31,6 +31,8 @@ Rails.application.routes.draw do
       get 'all-groups', to: 'groups#all_groups'
       get 'group/:id', to: 'groups#show_group'
       post 'create-group', to: 'groups#create'
+      post 'join-public-group/:id', to: 'groups#join_public_group'
+      post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
       # resources :groups
       # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
       # post :post_comment_reply, controller: 'comments', as: 'post_comment_reply'
