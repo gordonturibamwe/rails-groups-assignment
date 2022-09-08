@@ -84,7 +84,7 @@ class Api::V1::GroupsController < ApplicationController
     user_exists_in_group = current_user_group_member?(@group)
     respond_to do |format|
       @user_group = UserGroup.create(is_member: false, group_id: @group.id, user_id: @user.id, request_accepted: false)
-      if !user_exists_in_group && @group.is_public? && @user_group.save
+      if !user_exists_in_group && @group.is_private? && @user_group.save
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
         ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
         format.json {render status: :ok}
@@ -95,13 +95,13 @@ class Api::V1::GroupsController < ApplicationController
         }
       end
     end
-  rescue => exception
-    respond_to do |format|
-      format.json {
-        render status: :unprocessable_entity,
-        json: error_response_messages({error: [exception.message]})
-      }
-    end
+  # rescue => exception
+  #   respond_to do |format|
+  #     format.json {
+  #       render status: :unprocessable_entity,
+  #       json: error_response_messages({error: [exception.message]})
+  #     }
+  #   end
   end
 
 
