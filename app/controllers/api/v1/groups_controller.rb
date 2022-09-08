@@ -95,13 +95,13 @@ class Api::V1::GroupsController < ApplicationController
         }
       end
     end
-  # rescue => exception
-  #   respond_to do |format|
-  #     format.json {
-  #       render status: :unprocessable_entity,
-  #       json: error_response_messages({error: [exception.message]})
-  #     }
-  #   end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
   end
 
 
