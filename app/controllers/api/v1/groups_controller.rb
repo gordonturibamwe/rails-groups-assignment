@@ -5,13 +5,9 @@ class Api::V1::GroupsController < ApplicationController
   def all_groups
     respond_to do |format|
       @groups = Group.where(user_id: @user.id).order(created_at: :desc) if params[:q] == 'by-me'
-      @groups = Group.includes(:user_groups).where(user_groups: {user_id: @user.id}).order(created_at: :desc) if params[:q] == 'where-am-member'
+      @groups = Group.includes(:user_groups).where(user_groups: {user_id: @user.id, request_accepted: true}).order(created_at: :desc) if params[:q] == 'where-am-member'
       @groups = Group.includes(:user_groups).order(created_at: :desc) if @groups.nil?
       format.json {render status: :ok}
-      # puts "++++----- #{@groups.first.user_groups.include?(@user.id)}"
-      # puts "++++----- #{@user.groups.user_groups}"
-      # puts "++++----- #{@groups.first.user_groups}"
-      # puts "++++----- #{@groups.first.user_groups}"
     end
   end
 
@@ -32,6 +28,21 @@ class Api::V1::GroupsController < ApplicationController
       }
     end
   end
+
+  def group_members
+    respond_to do |format|
+      @members = @group.user_groups.where(request_accepted: true)#.order(created_at: :desc)#.excluding(@user)
+      format.json {render status: :ok}
+    end
+  end
+
+  def group_user_requests
+    respond_to do |format|
+      @group_requests = @group.user_groups.where(request_accepted: false)#.order(created_at: :desc)#.excluding(@user)
+      format.json {render status: :ok}
+    end
+  end
+
 
   def create
     @group = @user.groups.build(group_params)
@@ -55,10 +66,31 @@ class Api::V1::GroupsController < ApplicationController
     end
   end
 
+  def update
+    respond_to do |format|
+      if @group.update(group_params)
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages(@group.errors.messages)
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
   def join_public_group
     user_exists_in_group = current_user_group_member?(@group)
     respond_to do |format|
-      @user_group = UserGroup.create(is_member: true, group_id: @group.id, user_id: @user.id, request_accepted: true)
+      @user_group = UserGroup.new(is_member: true, group_id: @group.id, user_id: @user.id, request_accepted: true)
       if !user_exists_in_group && @group.is_public? && @user_group.save
         @group.update(total_members: @group.total_members + 1)
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
@@ -127,6 +159,7 @@ class Api::V1::GroupsController < ApplicationController
       is_admin: user_group.is_admin,
       request_accepted: user_group.request_accepted,
       group_id: user_group.group_id,
+      user: user_group.user,
       user_id: user_group.user_id,
       action: action
     }

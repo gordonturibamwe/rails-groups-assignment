@@ -14,6 +14,7 @@ class Group < ApplicationRecord
   end
 
   after_create do
+    Current.group_id = self.id
     user_group = UserGroup.create(
       is_member: true,
       is_admin: true,

@@ -30,7 +30,10 @@ Rails.application.routes.draw do
 
       get 'all-groups', to: 'groups#all_groups'
       get 'group/:id', to: 'groups#show_group'
+      get 'group/:id/members', to: 'groups#group_members'
+      get 'group/:id/user-requests', to: 'groups#group_user_requests'
       post 'create-group', to: 'groups#create'
+      match 'update-group/:id', to: 'groups#update', via: ['post', 'patch']
       post 'join-public-group/:id', to: 'groups#join_public_group'
       post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
       # resources :groups
