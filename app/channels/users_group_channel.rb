@@ -5,8 +5,6 @@ class UsersGroupChannel < ApplicationCable::Channel
   end
 
   def receive(data)
-    puts "-----+++++ #{data.inspect}"
-    # ActionCable.server.broadcast "GroupsChannel", data
   end
 
   def unsubscribed
