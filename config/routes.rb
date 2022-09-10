@@ -36,6 +36,8 @@ Rails.application.routes.draw do
       match 'update-group/:id', to: 'groups#update', via: ['post', 'patch']
       post 'join-public-group/:id', to: 'groups#join_public_group'
       post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
+      patch 'accept-private-group-request/:id', to: 'groups#accept_private_group_request'
+      delete 'destroy-group-request/:id', to: 'groups#destroy_group_request'
       # resources :groups
       # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
       # post :post_comment_reply, controller: 'comments', as: 'post_comment_reply'

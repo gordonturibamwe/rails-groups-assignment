@@ -1,6 +1,6 @@
 class Api::V1::GroupsController < ApplicationController
   include Api::V1::GroupsHelper
-  before_action :set_group, except: [:create, :all_groups]
+  before_action :set_group, except: [:create, :all_groups, :accept_private_group_request, :destroy_group_request]
 
   def all_groups
     respond_to do |format|
@@ -31,7 +31,7 @@ class Api::V1::GroupsController < ApplicationController
 
   def group_members
     respond_to do |format|
-      @members = @group.user_groups.where(request_accepted: true)#.order(created_at: :desc)#.excluding(@user)
+      @members = @group.user_groups.where(request_accepted: true).order(updated_at: :asc)#.excluding(@user)
       format.json {render status: :ok}
     end
   end
@@ -115,7 +115,7 @@ class Api::V1::GroupsController < ApplicationController
   def request_to_join_private_group
     user_exists_in_group = current_user_group_member?(@group)
     respond_to do |format|
-      @user_group = UserGroup.create(is_member: false, group_id: @group.id, user_id: @user.id, request_accepted: false)
+      @user_group = UserGroup.new(is_member: false, group_id: @group.id, user_id: @user.id, request_accepted: false)
       if !user_exists_in_group && @group.is_private? && @user_group.save
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
         ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
@@ -124,6 +124,54 @@ class Api::V1::GroupsController < ApplicationController
         format.json {
           render status: :unprocessable_entity,
           json: error_response_messages({error: [user_exists_in_group ? 'Request already sent.' : 'Request not sent. Try again.']})
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
+  def accept_private_group_request
+    @user_group = UserGroup.find_by_id(params[:id])
+    respond_to do |format|
+      if @user_group.group.is_private? && @user_group.update(is_member: true, request_accepted: true)
+        group = @user_group.group
+        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create') # keep accept action
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: group, action: 'update')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages({error: [user_exists_in_group ? 'Request already accepted.' : 'Request not accepted. Try again.']})
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
+  def destroy_group_request
+    @user_group = UserGroup.find_by_id(params[:id])
+    respond_to do |format|
+      if @user_group.destroy
+        group = @user_group.group
+        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'destroy')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: group, action: 'destroy')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages({error: [user_exists_in_group ? 'Request already deleted.' : 'Request not deleted. Try again.']})
         }
       end
     end
