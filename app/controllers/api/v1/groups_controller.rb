@@ -140,9 +140,9 @@ class Api::V1::GroupsController < ApplicationController
     @user_group = UserGroup.find_by_id(params[:id])
     respond_to do |format|
       if @user_group.group.is_private? && @user_group.update(is_member: true, request_accepted: true)
-        group = @user_group.group
+        @user_group.group.update(total_members: @user_group.group.total_members + 1)
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create') # keep accept action
-        ActionCable.server.broadcast "GroupsChannel", group_object(group: group, action: 'update')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @user_group.group, action: 'update')
         format.json {render status: :ok}
       else
         format.json {
@@ -164,9 +164,9 @@ class Api::V1::GroupsController < ApplicationController
     @user_group = UserGroup.find_by_id(params[:id])
     respond_to do |format|
       if @user_group.destroy
-        group = @user_group.group
+        @user_group.group.update(total_members: @user_group.group.total_members - 1)
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'destroy')
-        ActionCable.server.broadcast "GroupsChannel", group_object(group: group, action: 'destroy')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @user_group.group, action: 'destroy')
         format.json {render status: :ok}
       else
         format.json {
