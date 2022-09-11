@@ -32,8 +32,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_06_075152) do
     t.uuid "user_id", null: false
     t.uuid "group_id", null: false
     t.boolean "is_admin", default: false
-    t.boolean "is_member", default: true
+    t.boolean "is_member", default: false
     t.boolean "request_accepted", default: false
+    t.boolean "secret_group_invitation", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["group_id"], name: "index_user_groups_on_group_id"

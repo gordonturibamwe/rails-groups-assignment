@@ -23,6 +23,7 @@ group :development, :test do # See https://guides.rubyonrails.org/debugging_rail
 end
 group :development do # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
+  gem 'faker', :git => 'https://github.com/faker-ruby/faker.git', :branch => 'master'
 end
 
 # For Documentation

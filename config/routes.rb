@@ -29,12 +29,15 @@ Rails.application.routes.draw do
       post "send-email", to: "send_messages#send_email_now"
 
       get 'all-groups', to: 'groups#all_groups'
+      get 'search-user/:username', to: 'groups#search_user_by_username'
       get 'group/:id', to: 'groups#show_group'
       get 'group/:id/members', to: 'groups#group_members'
       get 'group/:id/user-requests', to: 'groups#group_user_requests'
+      get 'group/:id/secret-group-invites', to: 'groups#secret_group_invites'
       post 'create-group', to: 'groups#create'
       match 'update-group/:id', to: 'groups#update', via: ['post', 'patch']
       post 'join-public-group/:id', to: 'groups#join_public_group'
+      post 'invite-user-to-secret-group/:id/user/:user_id', to: 'groups#invite_user_to_secret_group'
       post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
       patch 'accept-private-group-request/:id', to: 'groups#accept_private_group_request'
       delete 'destroy-group-request/:id', to: 'groups#destroy_group_request'
