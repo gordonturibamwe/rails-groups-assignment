@@ -163,13 +163,13 @@ class Api::V1::GroupsController < ApplicationController
       @user_group = UserGroup.new(is_member: true, group_id: @group.id, user_id: user.id, request_accepted: true, secret_group_invitation: true)
       if !user_exists_in_group && @group.is_secret? && @user_group.save
         @group.update(total_members: @group.total_members + 1)
-        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'secret-invitations')
+        ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
         ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
         format.json {render status: :ok}
       else
         format.json {
           render status: :unprocessable_entity,
-          json: error_response_messages({error: [user_exists_in_group ? 'Invitation already sent.' : 'Invitation not sent. Try again.']})
+          json: error_response_messages({error: [user_exists_in_group ? 'Already a member.' : 'Invitation not sent. Try again.']})
         }
       end
     end
