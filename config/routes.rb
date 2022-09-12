@@ -2,32 +2,26 @@ Rails.application.routes.draw do
   mount ActionCable.server => "/cable"
   root to: "welcome#welcome"
 
-  namespace :api, defaults: {format: :json} do
+  namespace :api, defaults: {format: :json} do # Users
     namespace :v1 do
-      # User
       get "current-user", to: "user#current_user", as: 'current_user'
       post "user-registration", to: "user#user_registration", as: 'user_registration'
       post "user-login", to: "user#user_login"
-      # get "verify-user-with-id/:verification_id", to: "user#verify_user_with_id"
-      # patch "verify-user-with-otp", to: "user#verify_user_with_otp"
-      # match "reset-user-password/:reset_password_id", to: "user#reset_user_password", as: 'reset_user_password', via: [:get, :post]
       patch "update-user", to: "user#update_user"
       patch "deactivate-user/:user_id", to: "user#deactivate_user"
       patch "activate-user/:user_id", to: "user#activate_user"
       patch "lock-user/:user_id", to: "user#lock_user"
       patch "unlock-user/:user_id", to: "user#unlock_user"
-      # patch "update-user-roles/:user_id", to: "user#update_user_roles"
-      # patch "remove-from-waitlist/:user_id", to: "user#remove_from_waitlist"
-      # patch "add-to-waitlist/:user_id", to: "user#add_to_waitlist"
-      # patch "reset-verification/:user_id", to: "user#reset_verification"
       delete "logout", to: "user#logout_user"
-      # post "register-new-staff-user", to: "user#register_new_staff_user"
-      # post "register-new-customer-user", to: "user#register_new_customer_user"
 
       # Communication
       post "send-sms", to: "send_messages#send_sms_now"
       post "send-email", to: "send_messages#send_email_now"
+    end
+  end
 
+  namespace :api, defaults: {format: :json} do # Groups
+    namespace :v1 do
       get 'all-groups', to: 'groups#all_groups'
       get 'search-user/:username', to: 'groups#search_user_by_username'
       get 'group/:id', to: 'groups#show_group'
@@ -41,14 +35,20 @@ Rails.application.routes.draw do
       post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
       patch 'accept-private-group-request/:id', to: 'groups#accept_private_group_request'
       delete 'destroy-group-request/:id', to: 'groups#destroy_group_request'
-      # resources :groups
-      # get 'post/:post_id/comment/:comment_id/reply', to: 'comments#new_comment_reply', as: 'new_comment_reply'
-      # post :post_comment_reply, controller: 'comments', as: 'post_comment_reply'
-      # get 'group/:id', to: "groups#show_group", as: 'show_group'
-      # delete 'group/:id/user/:user_id', to: "groups#remove_user_from_group_request", as: 'remove_user_from_group_request'
-      # post 'group/:id/user/:user_id', to: "groups#approve_group_request", as: 'approve_group_request'
     end
   end
+
+  namespace :api, defaults: {format: :json} do # Posts
+    namespace :v1 do
+      post 'create-post', to: 'post#create'
+      post 'post/create'
+      get 'post/destroy'
+      get 'post/all_posts'
+      get 'post/show_post'
+      get 'post/edit'
+    end
+  end
+
 
   # This stays at the last
   # match '*path', :to => "application#error_404"
