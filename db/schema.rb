@@ -85,7 +85,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_11_224841) do
     t.integer "year", default: 0, null: false
     t.integer "month", default: 0, null: false
     t.string "month_in_words", default: "", null: false
-    t.string "username", limit: 20, default: "", null: false
+    t.string "username", limit: 20, null: false
     t.string "email", limit: 70
     t.string "password_digest"
     t.integer "login_count", default: 0, null: false

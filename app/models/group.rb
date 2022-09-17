@@ -3,7 +3,7 @@ class Group < ApplicationRecord
   validates :name, uniqueness: {message: "Group name already exists. Please change or update name."}, format: {with: /[0-9a-zA-Z]/, on: :save}
   has_many :user_groups, dependent: :destroy, foreign_key: :group_id
   has_many :users, through: :user_groups
-  # has_many :posts, dependent: :destroy
+  has_many :posts, dependent: :destroy
   belongs_to :user
 
   enum group_access: [:is_public, :is_private, :is_secret]
