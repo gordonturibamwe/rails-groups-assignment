@@ -23,6 +23,28 @@ class Api::V1::PostsController < ApplicationController
     end
   end
 
+  def update
+    @post = Post.find_by_id(params[:post_id])
+    respond_to do |format|
+      if @post.update(post_params)
+        ActionCable.server.broadcast "PostsChannel", post_object(post: @post, action: 'update')
+        format.json {render status: :ok}
+      else
+        format.json {
+          render status: :unprocessable_entity,
+          json: error_response_messages(@post.errors.messages)
+        }
+      end
+    end
+  rescue => exception
+    respond_to do |format|
+      format.json {
+        render status: :unprocessable_entity,
+        json: error_response_messages({error: [exception.message]})
+      }
+    end
+  end
+
   def group_posts
     respond_to do |format|
       @group = Group.find_by_id(params[:group_id])

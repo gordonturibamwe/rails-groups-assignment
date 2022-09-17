@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   namespace :api, defaults: {format: :json} do # Posts
     namespace :v1 do
       post 'create-post', to: 'posts#create'
+      patch 'update-post/:post_id', to: 'posts#update'
       get 'group-posts/:group_id', to: 'posts#group_posts'
       delete 'group-posts/:post_id', to: 'posts#destroy'
     end
