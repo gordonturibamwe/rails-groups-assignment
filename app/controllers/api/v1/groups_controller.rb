@@ -1,6 +1,6 @@
 class Api::V1::GroupsController < ApplicationController
   include Api::V1::GroupsHelper
-  before_action :set_group, except: [:create, :all_groups, :accept_private_group_request, :destroy_group_request, :search_user_by_username]
+  before_action :set_group, except: [:create, :all_groups, :accept_private_group_request, :destroy_group_request, :search_user_by_username, :post_notification]
 
   def all_groups
     respond_to do |format|
@@ -165,7 +165,7 @@ class Api::V1::GroupsController < ApplicationController
         @group.update(total_members: @group.total_members + 1)
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'create')
         ActionCable.server.broadcast "GroupsChannel", group_object(group: @group, action: 'update')
-        ActionCable.server.broadcast "NotificationsChannel", {message: "You have been invited to #{@group.name}", recipient: @group.user} # notification_object(message: "You have been invited to #{@group.name}", recipient: user, sender: @user, path: "group/#{@group.id}")
+        ActionCable.server.broadcast "NotificationsChannel", {message: "You have been invited to #{@group.name}", recipient: @user_group.user} # notification_object(message: "You have been invited to #{@group.name}", recipient: user, sender: @user, path: "group/#{@group.id}")
         format.json {render status: :ok}
       else
         format.json {
@@ -214,7 +214,7 @@ class Api::V1::GroupsController < ApplicationController
         @user_group.group.update(total_members: @user_group.group.total_members - 1)
         ActionCable.server.broadcast "UsersGroupChannel", user_group_object(user_group: @user_group, action: 'destroy')
         ActionCable.server.broadcast "GroupsChannel", group_object(group: @user_group.group, action: 'update')
-        ActionCable.server.broadcast "NotificationsChannel", {message: "You have been deleted.", recipient: @user_group.user}
+        ActionCable.server.broadcast "NotificationsChannel", {message: "You have been removed from #{@user_group.group.name}.", recipient: @user_group.user}
         format.json {render status: :ok}
       else
         format.json {
@@ -232,6 +232,12 @@ class Api::V1::GroupsController < ApplicationController
     end
   end
 
+  def post_notification
+    respond_to do |format|
+    ActionCable.server.broadcast "NotificationsChannel", {message: "Notification posted", recipient: @user}
+      format.json {render status: :ok}
+    end
+  end
 
   private
   def group_object(group:, action:)

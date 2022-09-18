@@ -3,9 +3,20 @@ class Api::V1::PostsController < ApplicationController
     @group = Group.find_by_id(params[:id])
     @post = @group.posts.build(post_params)
     @post.user_id = @user.id
+    @post.mentions = params[:mentions].split(',')
     respond_to do |format|
       if @post.save
+        @group.update(total_posts: @group.total_posts + 1)
         ActionCable.server.broadcast "PostsChannel", post_object(post: @post, action: 'create')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @post.group, action: 'update')
+        mentions = @post.mentions
+        post = @post
+        Thread.new(mentions, post) {
+          mentions.each do |id|
+            user = User.find_by_id(id)
+            ActionCable.server.broadcast "NotificationsChannel", {message: "You have been mentioned in post #{post.title}", recipient: user} if user # notification_object(message: "You have been invited to #{@group.name}", recipient: user, sender: @user, path: "group/#{@group.id}")
+          end
+        } if mentions.count > 0
         format.json {render status: :ok}
       else
         format.json {
@@ -57,7 +68,11 @@ class Api::V1::PostsController < ApplicationController
   def destroy
     respond_to do |format|
       @post = Post.find_by_id(params[:post_id])
+      @group =  @post.group
       if @post.destroy
+        @group.update(total_posts: @group.total_posts - 1)
+        ActionCable.server.broadcast "PostsChannel", post_object(post: @post, action: 'destroy')
+        ActionCable.server.broadcast "GroupsChannel", group_object(group: @post.group, action: 'update')
         format.json {render status: :ok}
       else
         format.json {render status: :unprocessable_entity}
@@ -85,11 +100,25 @@ class Api::V1::PostsController < ApplicationController
     }
   end
 
+  def group_object(group:, action:)
+    {
+      id: group.id,
+      name: group.name,
+      group_access: group.group_access,
+      total_posts: group.total_posts,
+      total_members: group.total_members,
+      last_activity: group.last_activity,
+      user_id: group.user_id,
+      user_exists_in_group: group.user_groups.find_by_user_id(@user.id),
+      action: action
+    }
+  end
+
   def set_post
     @post = Post.find(params[:id])
   end
 
   def post_params
-    params.permit(:title, :content, :last_activity, :group_id, :user_id, :images)
+    params.permit(:title, :content, :last_activity, :mentions, :group_id, :user_id, :images)
   end
 end

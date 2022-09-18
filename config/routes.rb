@@ -35,6 +35,7 @@ Rails.application.routes.draw do
       post 'request-to-join-private-group/:id', to: 'groups#request_to_join_private_group'
       patch 'accept-private-group-request/:id', to: 'groups#accept_private_group_request'
       delete 'destroy-group-request/:id', to: 'groups#destroy_group_request'
+      post 'post-notification', to: 'groups#post_notification'
     end
   end
 
